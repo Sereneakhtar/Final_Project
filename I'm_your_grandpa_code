@@ -1,0 +1,137 @@
+runit :-    isDaughter(redhair,i), isMother(redhair,i), isSon_in_Law(dad,i), isBrother(baby, dad), 
+            isUncle(baby,i), isBrother(baby,redhair), isGrandchild(onrun,i), isMother(widow,redhair), 
+            isGrandmother(widow,i), isGrandchild(i,widow), isGrandfather(i,i).
+
+%%%%FACTS%%%%%
+male(i). 
+male(dad). 
+male(baby).
+male(onrun).
+
+female(widow).
+female(redhair). 
+
+spouse(i,widow).
+spouse(widow, i).
+spouse(dad, redhair).
+spouse(redhair, dad).
+
+%child(widow, redhair).
+child(redhair, widow).
+child(i, dad).
+child(onrun, dad).
+child(baby, i).
+%child(widow, baby). 
+%child(redhair, onrun).
+
+getVal(Goal, true) :- Goal.
+getVal(Goal, false) :- \+Goal.
+
+%Test Cases
+isMother(A,B) :-
+                write('\n'),
+                write('Is '), write(A), write(' the mother of '),
+                write(B), write('?\t'), getVal(mother(A,B),V),
+                write(V).
+
+isDaughter(A,B) :-
+                write('\n'),
+                write('Is '), write(A), write(' the daughter of '), 
+                write(B), write('?:\t'), getVal(daughter(A,B),V), 
+                write(V). 
+
+isFather(A,B) :-
+                write('\n'),
+                write('Is '), write(A), write(' the father of '), 
+                write(B), write('?:\t'), getVal(father(A,B),V), 
+                write(V).
+
+isSon(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the son of '), 
+                write(B), write('?:\t'), getVal(son(A,B),V), 
+                write(V).
+
+isSon_in_Law(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the son in law of '), 
+                write(B), write('?:\t'), getVal(son_in_law(A,B),V), 
+                write(V).
+
+isGrandfather(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the grandfather of '), 
+                write(B), write('?:\t'), getVal(grandfather(A,B),V), 
+                write(V).
+
+isGrandchild(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the grandchild of '), 
+                write(B), write('?:\t'), getVal(grandchild(A,B),V), 
+                write(V).
+
+isBrother(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the brother of '), 
+                write(B), write('?:\t'), getVal(brother(A,B),V), 
+                write(V).
+
+isSister(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the sister of '), 
+                write(B), write('?:\t'), getVal(sister(A,B),V), 
+                write(V).
+
+isGrandmother(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the grandmother of '), 
+                write(B), write('?:\t'), getVal(grandmother(A,B),V), 
+                write(V).
+
+isUncle(A,B) :-  write('\n'),
+                write('Is '), write(A), write(' the uncle of '), 
+                write(B), write('?:\t'), getVal(uncle(A,B),V), 
+                write(V).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%RULES%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Mother is a female who someone is the child of or is the spouse of the person who is their father
+mother(Mother,Person) :- female(Mother), (aChild(Person, Mother); spouse(Spouse, Mother), aChild(Person, Spouse)).
+
+% Father is a male who someone is the child of or is the spouse of the person who is their mother
+father(Father, Child) :- male(Father), (aChild(Child, Father); spouse(Spouse,Father), aChild(Child, Spouse)).
+
+% Daughter is a female who is the child of a person or the female child of the person someone is married too 
+daughter(Daughter, Person) :- female(Daughter), (aChild(Daughter, Person); spouse(Parent, Person), aChild(Daughter, Parent)).
+
+% Son_in_law is the son of the person your spouse
+son_in_law(Son_in_law, Person) :- male(Son_in_law), (spouse(Spouse, Person), aChild(Son_in_law, Spouse)) ; 
+                                    (spouse(OtherSpouse, Son_in_law), aChild(OtherSpouse, Spouse), spouse(Person, Spouse)).  
+
+% Son is a male child of someone or the male child of the person someone is married too
+son(Son, Parent) :- male(Son), (aChild(Son, Parent); spouse(Parent, Spouse), aChild(Son, Spouse)). 
+
+% Grandfather is the Grandfather of Person, if father is the father of Person or Grandfather is the father of Person
+grandfather(Grandfather, Person) :- male(Grandfather), (father(Father, Person), father(Grandfather, Father)) ; 
+                                    (spouse(Person, Spouse), father(SpouseFather, Spouse), father(SpouseGrandfather, SpouseFather)).
+
+% Grandmother is the Grandmother of Person, if mother is the mother of Person or Grandmother is the mother of Person
+grandmother(Grandmother, Person) :- female(Grandmother), (mother(Mother, Person), mother(Grandmother, Mother)) ; 
+                                    (spouse(Person, Spouse), (mother(SpouseMother, Person), mother(SpouseGrandmother, SpouseMother))) .
+
+% Grandparent is the Grandparent of Person, if Grandfather is the Grandfather of Person or Grandmother is the Grandmother of Person
+grandparent(Grandparent, Person) :- grandfather(Grandparent, Person); grandmother(Grandparent, Person).
+
+% Grandchild is the Grandchild of Person, if Person is the grandparent of Grandchild
+grandchild(Grandchild, Person) :- grandparent(Grandparent, Person). 
+
+% Sibling is a sibling to someone if they share the same mother or father
+sibling(Person, Sibling) :- (mother(Mother, Person), mother(Mother, Sibling)) ; 
+                            (father(Father, Person), father(Father, Sibling)) ; 
+                            (spouse(Spouse, Person), (mother(Mother, Spouse), mother(Mother, Sibling)) ; 
+                            (father(Father, Spouse), father(Father, Sibling))). 
+
+brother(Person, Sibling) :- male(Person), sibling(Person, Sibling).
+sister(Person, Sibling) :- female(Person), sibling(Person, Sibling).
+
+% Uncle is a male who is the brother to someone's father
+uncle(Uncle, Person) :- male(Uncle), (sibling(Person, Sibling), father(Sibling, Uncle)).
+
+% Child is someone who is a child of the parent, their parent is the spouse of the person, or their spouse is the parent of their child's spouse 
+aChild(Child, Parent) :- child(Child, Parent) ; (spouse(Spouse, Parent), child(Child, Spouse)); (spouse(Spouse, Parent), spouse(ChildSpouse, Child), child(ChildSpouse, Spouse)).
+
+aSpouse(Spouse1, Spouse2) :- spouse(Spouse1, Spouse2) ; spouse(Spouse2, Spouse1). 
